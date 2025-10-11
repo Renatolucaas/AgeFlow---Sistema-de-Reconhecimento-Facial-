@@ -16,3 +16,7 @@ def lambda_handler(event, context):
 
          # Decodificar imagem base64
         image_bytes = base64.b64decode(image_data.split(',')[1])
+
+        # Gerar ID único
+        request_id = str(uuid.uuid4())
+        timestamp = int(datetime.now().timestamp())
