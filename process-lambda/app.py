@@ -28,3 +28,9 @@ def lambda_handler(event, context):
                 Image={'Bytes': image_bytes},
                 Attributes=['ALL']
             )
+
+             # Processar resultados
+            results = process_faces(rekognition_response, request_id)
+            
+            # Salvar no DynamoDB
+            save_to_dynamodb(results, user_email)
