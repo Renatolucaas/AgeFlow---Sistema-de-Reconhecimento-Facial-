@@ -51,3 +51,28 @@ def lambda_handler(event, context):
             MessageBody=json.dumps(queue_message)
         )
         
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({
+                'success': True,
+                'requestId': request_id,
+                'message': 'Imagem recebida e em processamento'
+            })
+        }
+        
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({
+                'success': False,
+                'error': str(e)
+            })
+        }
