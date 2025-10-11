@@ -81,3 +81,13 @@ Resources:
       Subscription:
         - Protocol: email
           Endpoint: !Ref NotificationEmail  # ✅ SEU EMAIL AQUI
+
+# API Gateway
+  ApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Environment
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
