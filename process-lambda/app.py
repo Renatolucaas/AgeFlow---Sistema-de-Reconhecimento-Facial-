@@ -51,3 +51,58 @@ def process_faces(rekognition_response, request_id):
         age_range = face_detail['AgeRange']
         emotions = face_detail['Emotions']
         gender = face_detail['Gender']
+
+        # Encontrar emoção predominante
+        primary_emotion = max(emotions, key=lambda x: x['Confidence'])
+        
+        face_data = {
+            'faceId': f"{request_id}-face-{i}",
+            'ageRange': {
+                'low': age_range['Low'],
+                'high': age_range['High'],
+                'estimated': (age_range['Low'] + age_range['High']) // 2
+            },
+            'gender': {
+                'value': gender['Value'],
+                'confidence': gender['Confidence']
+            },
+            'emotion': {
+                'type': primary_emotion['Type'],
+                'confidence': primary_emotion['Confidence']
+            },
+            'timestamp': int(datetime.now().timestamp())
+        }
+        faces_data.append(face_data)
+    
+    return {
+        'requestId': request_id,
+        'facesDetected': len(faces_data),
+        'faces': faces_data,
+        'processedAt': datetime.now().isoformat()
+    }
+
+def save_to_dynamodb(results, user_email):
+    table = dynamodb.Table('age-estimation-system-dev-results')
+    
+    item = {
+        'requestId': results['requestId'],
+        'timestamp': results['faces'][0]['timestamp'] if results['faces'] else int(datetime.now().timestamp()),
+        'userEmail': user_email,
+        'facesDetected': results['facesDetected'],
+        'faces': results['faces'],
+        'processedAt': results['processedAt']
+    }
+    
+    table.put_item(Item=item)
+
+def send_to_results_queue(results, user_email):
+    message = {
+        'requestId': results['requestId'],
+        'userEmail': user_email,
+        'results': results
+    }
+    
+    sqs.send_message(
+        QueueUrl='https://sqs.us-east-1.amazonaws.com/123456789012/age-estimation-system-dev-results-queue',
+        MessageBody=json.dumps(message)
+    )
