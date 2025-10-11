@@ -72,3 +72,12 @@ Resources:
               KeyType: "HASH"
           Projection:
             ProjectionType: "ALL"
+
+# Tópico SNS para notificações (APENAS 1 VEZ)
+  NotificationsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "${ProjectName}-${Environment}-notifications"
+      Subscription:
+        - Protocol: email
+          Endpoint: !Ref NotificationEmail  # ✅ SEU EMAIL AQUI
