@@ -50,3 +50,25 @@ Resources:
       QueueName: !Sub "${ProjectName}-${Environment}-results-queue"
       VisibilityTimeout: 300
       MessageRetentionPeriod: 3600
+
+# Tabela DynamoDB
+  ResultsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${ProjectName}-${Environment}-results"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: "requestId"
+          AttributeType: "S"
+        - AttributeName: "createdAt"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "requestId"
+          KeyType: "HASH"
+      GlobalSecondaryIndexes:
+        - IndexName: "createdAt-index"
+          KeySchema:
+            - AttributeName: "createdAt"
+              KeyType: "HASH"
+          Projection:
+            ProjectionType: "ALL"
