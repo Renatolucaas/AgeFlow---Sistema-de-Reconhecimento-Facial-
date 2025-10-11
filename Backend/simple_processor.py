@@ -90,3 +90,31 @@ class AgeEstimationProcessor:
     def process_base64_image(self, base64_data, user_email="anonymous@example.com"):
         """Processar imagem em base64"""
         try:
+
+            # Decodificar base64
+            if ',' in base64_data:
+                base64_data = base64_data.split(',')[1]
+            
+            image_bytes = base64.b64decode(base64_data)
+            return self.process_image(image_bytes, user_email)
+            
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f"Erro ao decodificar imagem: {str(e)}"
+            }
+
+# Exemplo de uso
+if __name__ == "__main__":
+    processor = AgeEstimationProcessor()
+    
+    if processor.check_credentials():
+        print("🔍 Testando processamento...")
+        
+        # Você pode testar com uma imagem local
+        # result = processor.process_image(open("test.jpg", "rb").read())
+        # print(json.dumps(result, indent=2, ensure_ascii=False))
+        
+        print("✅ Sistema pronto para uso!")
+    else:
+        print("❌ Configure as credenciais AWS primeiro")
