@@ -20,3 +20,6 @@ def lambda_handler(event, context):
         # Gerar ID único
         request_id = str(uuid.uuid4())
         timestamp = int(datetime.now().timestamp())
+
+        # Nome do arquivo no S3
+        file_name = f"uploads/{request_id}.jpg"
