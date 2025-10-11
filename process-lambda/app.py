@@ -22,3 +22,9 @@ def lambda_handler(event, context):
                 Key=s3_key
             )
             image_bytes = s3_response['Body'].read()
+
+            # Chamar Amazon Rekognition para detecção facial
+            rekognition_response = rekognition.detect_faces(
+                Image={'Bytes': image_bytes},
+                Attributes=['ALL']
+            )
