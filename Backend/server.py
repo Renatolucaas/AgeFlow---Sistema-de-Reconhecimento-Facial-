@@ -153,3 +153,16 @@ if __name__ == '__main__':
     print("=" * 60)
     print("🚀 INICIANDO SERVIDOR DE ESTIMATIVA DE IDADE")
     print("=" * 60)
+
+    # Verifica credenciais AWS
+    print("📧 Verificando credenciais AWS...")
+    if processor.check_credentials():
+        print("✅ AWS configurada corretamente!")
+        print("🌐 Servidor rodando em: http://localhost:5000")
+        print("📷 Interface: http://localhost:5000")
+        print("🔍 Endpoint de saúde: http://localhost:5000/api/health")
+        print("=" * 60)
+        app.run(debug=True, host='0.0.0.0', port=5000)
+    else:
+        print("❌ Erro: Credenciais AWS não configuradas")
+        print("💡 Execute: aws configure")
