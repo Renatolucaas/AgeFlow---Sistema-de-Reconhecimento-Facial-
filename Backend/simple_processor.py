@@ -29,3 +29,30 @@ class AgeEstimationProcessor:
                 Image={'Bytes': image_bytes},
                 Attributes=['ALL']
             )
+
+             # Processar resultados
+            results = self._process_faces(response, user_email)
+            return {
+                'success': True,
+                'results': results
+            }
+            
+        except ClientError as e:
+            return {
+                'success': False,
+                'error': f"Erro AWS: {e.response['Error']['Message']}"
+            }
+        except Exception as e:
+            return {
+                'success': False, 
+                'error': f"Erro interno: {str(e)}"
+            }
+    
+    def _process_faces(self, rekognition_response, user_email):
+        """Processar dados das faces detectadas"""
+        faces_data = []
+        
+        for i, face_detail in enumerate(rekognition_response['FaceDetails']):
+            age_range = face_detail['AgeRange']
+            emotions = face_detail['Emotions']
+            gender = face_detail['Gender'] 
