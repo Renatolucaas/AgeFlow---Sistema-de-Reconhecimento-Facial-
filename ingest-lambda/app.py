@@ -44,3 +44,10 @@ def lambda_handler(event, context):
             'userEmail': user_email,
             'timestamp': timestamp
         }
+
+        # Enviar para SQS
+        sqs.send_message(
+            QueueUrl='https://sqs.us-east-1.amazonaws.com/123456789012/age-estimation-system-dev-upload-queue',
+            MessageBody=json.dumps(queue_message)
+        )
+        
