@@ -15,3 +15,10 @@ def lambda_handler(event, context):
             request_id = message['requestId']
             s3_key = message['s3Key']
             user_email = message['userEmail']
+
+              # Buscar imagem do S3
+            s3_response = s3.get_object(
+                Bucket='age-estimation-system-dev-images',
+                Key=s3_key
+            )
+            image_bytes = s3_response['Body'].read()
