@@ -15,3 +15,15 @@ except ImportError as e:
 
 app = Flask(__name__)
 CORS(app)  # Permite requisições do frontend
+
+# Inicializa o processador
+try:
+    processor = AgeEstimationProcessor()
+    print("✅ AgeEstimationProcessor inicializado!")
+except Exception as e:
+    print(f"❌ Erro ao inicializar processador: {e}")
+    sys.exit(1)
+
+@app.route('/')
+def serve_frontend():
+    """Serve a interface HTML principal"""
