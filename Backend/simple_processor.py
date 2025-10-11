@@ -56,3 +56,37 @@ class AgeEstimationProcessor:
             age_range = face_detail['AgeRange']
             emotions = face_detail['Emotions']
             gender = face_detail['Gender'] 
+
+            # Encontrar emoção predominante
+            primary_emotion = max(emotions, key=lambda x: x['Confidence'])
+            
+            face_data = {
+                'faceId': f"face-{i}",
+                'ageRange': {
+                    'low': age_range['Low'],
+                    'high': age_range['High'],
+                    'estimated': (age_range['Low'] + age_range['High']) // 2
+                },
+                'gender': {
+                    'value': gender['Value'],
+                    'confidence': round(gender['Confidence'], 1)
+                },
+                'emotion': {
+                    'type': primary_emotion['Type'],
+                    'confidence': round(primary_emotion['Confidence'], 1)
+                },
+                'boundingBox': face_detail['BoundingBox']
+            }
+            faces_data.append(face_data)
+        
+        return {
+            'requestId': str(uuid.uuid4()),
+            'userEmail': user_email,
+            'facesDetected': len(faces_data),
+            'faces': faces_data,
+            'processedAt': datetime.now().isoformat()
+        }
+    
+    def process_base64_image(self, base64_data, user_email="anonymous@example.com"):
+        """Processar imagem em base64"""
+        try:
