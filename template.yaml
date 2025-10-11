@@ -35,3 +35,18 @@ Resources:
             AllowedMethods: ["GET", "PUT", "POST", "HEAD"]
             AllowedOrigins: ["*"]
             MaxAge: 3000
+
+  # Filas SQS
+  ImageUploadQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${ProjectName}-${Environment}-upload-queue"
+      VisibilityTimeout: 300
+      MessageRetentionPeriod: 1200
+
+  ResultsQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${ProjectName}-${Environment}-results-queue"
+      VisibilityTimeout: 300
+      MessageRetentionPeriod: 3600
