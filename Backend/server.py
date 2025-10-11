@@ -89,3 +89,33 @@ def serve_static(filename):
     try:
         project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         file_path = os.path.join(project_root, 'frontend', filename)
+
+         if os.path.exists(file_path):
+            # Determina o content type baseado na extensão
+            if filename.endswith('.css'):
+                mimetype = 'text/css'
+            elif filename.endswith('.js'):
+                mimetype = 'application/javascript'
+            else:
+                mimetype = 'text/plain'
+                
+            with open(file_path, 'r', encoding='utf-8') as f:
+                return f.read(), 200, {'Content-Type': mimetype}
+        else:
+            return "Arquivo não encontrado", 404
+    except Exception as e:
+        return f"Erro: {str(e)}", 500
+
+@app.route('/api/analyze', methods=['POST'])
+def analyze_image():
+    """Endpoint para análise de imagem"""
+    try:
+        data = request.get_json()
+        
+        if not data or 'image' not in data:
+            return jsonify({
+                'success': False, 
+                'error': 'Nenhuma imagem fornecida'
+            }), 400
+        
+        print("🖼️ Processando imagem recebida...")
