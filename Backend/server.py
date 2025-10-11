@@ -119,3 +119,37 @@ def analyze_image():
             }), 400
         
         print("🖼️ Processando imagem recebida...")
+
+        # Processa a imagem base64
+        result = processor.process_base64_image(data['image'])
+        
+        if result['success']:
+            print(f"✅ Análise concluída: {result['results']['facesDetected']} face(s) detectada(s)")
+        else:
+            print(f"❌ Erro na análise: {result['error']}")
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        error_msg = f'Erro no servidor: {str(e)}'
+        print(f"❌ {error_msg}")
+        return jsonify({
+            'success': False, 
+            'error': error_msg
+        }), 500
+
+@app.route('/api/health')
+def health_check():
+    """Endpoint para verificar se o servidor está funcionando"""
+    aws_connected = processor.check_credentials()
+    return jsonify({
+        'status': 'healthy',
+        'service': 'Age Estimation API',
+        'aws_connected': aws_connected,
+        'message': '✅ Servidor funcionando perfeitamente!' if aws_connected else '❌ Problema com AWS'
+    })
+
+if __name__ == '__main__':
+    print("=" * 60)
+    print("🚀 INICIANDO SERVIDOR DE ESTIMATIVA DE IDADE")
+    print("=" * 60)
