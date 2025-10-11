@@ -116,3 +116,31 @@ Resources:
             Path: /upload
             Method: post
             RestApiId: !Ref ApiGateway
+
+# Lambda de Processamento
+  ProcessLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-${Environment}-process"
+      CodeUri: process-lambda/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Environment:
+        Variables:
+          IMAGES_BUCKET: !Ref ImagesBucket
+          RESULTS_TABLE: !Ref ResultsTable
+          RESULTS_QUEUE_URL: !Ref ResultsQueue
+      Policies:
+        - AmazonRekognitionFullAccess
+        - S3ReadPolicy:
+            BucketName: !Ref ImagesBucket
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ResultsTable
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt ResultsQueue.QueueName
+      Events:
+        SQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt ImageUploadQueue.Arn
+            BatchSize: 1
