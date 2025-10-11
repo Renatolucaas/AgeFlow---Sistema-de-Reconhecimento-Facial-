@@ -91,3 +91,28 @@ Resources:
         AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
         AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
         AllowOrigin: "'*'"
+
+        # Lambda de Ingestão
+  IngestLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-${Environment}-ingest"
+      CodeUri: ingest-lambda/
+      Handler: app.lambda_handler
+      Runtime: python3.13
+      Environment:
+        Variables:
+          IMAGES_BUCKET: !Ref ImagesBucket
+          UPLOAD_QUEUE_URL: !Ref ImageUploadQueue
+      Policies:
+        - S3WritePolicy:
+            BucketName: !Ref ImagesBucket
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt ImageUploadQueue.QueueName
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /upload
+            Method: post
+            RestApiId: !Ref ApiGateway
