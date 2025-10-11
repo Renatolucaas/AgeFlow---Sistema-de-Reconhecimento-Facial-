@@ -27,3 +27,65 @@ except Exception as e:
 @app.route('/')
 def serve_frontend():
     """Serve a interface HTML principal"""
+    try:
+        # Caminho correto para o index.html na pasta frontend
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        html_path = os.path.join(project_root, 'frontend', 'index.html')
+        
+        print(f"🔍 Procurando HTML em: {html_path}")
+        
+        if os.path.exists(html_path):
+            print("✅ HTML encontrado! Servindo interface...")
+            with open(html_path, 'r', encoding='utf-8') as f:
+                return f.read()
+        else:
+            # Debug: mostra o que existe
+            frontend_dir = os.path.join(project_root, 'frontend')
+            if os.path.exists(frontend_dir):
+                files = os.listdir(frontend_dir)
+                print(f"📁 Arquivos em frontend/: {files}")
+            else:
+                print("❌ Pasta frontend/ não existe!")
+                
+            error_html = f"""
+            <html>
+                <head><title>Erro - Arquivo não encontrado</title></head>
+                <body style="font-family: Arial, sans-serif; padding: 40px; background: #f8f9fa;">
+                    <div style="max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <h1 style="color: #e74c3c;">❌ Arquivo index.html não encontrado</h1>
+                        <h3>🔍 Procurando em:</h3>
+                        <code style="background: #f1f1f1; padding: 10px; display: block; border-radius: 5px;">{html_path}</code>
+                        
+                        <h3>📁 Estrutura do projeto:</h3>
+                        <ul style="background: #f8f9fa; padding: 15px; border-radius: 5px;">
+            """
+            # Lista arquivos do projeto para debug
+            for item in os.listdir(project_root):
+                item_path = os.path.join(project_root, item)
+                if os.path.isdir(item_path):
+                    error_html += f'<li>📁 {item}/</li>'
+                else:
+                    error_html += f'<li>📄 {item}</li>'
+            
+            error_html += """
+                        </ul>
+                        <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 5px;">
+                            <strong>💡 Solução:</strong> Verifique se o arquivo index.html está na pasta frontend/
+                        </div>
+                    </div>
+                </body>
+            </html>
+            """
+            return error_html, 404
+            
+    except Exception as e:
+        error_msg = f"Erro ao carregar interface: {str(e)}"
+        print(f"❌ {error_msg}")
+        return f"<h1>Erro</h1><p>{error_msg}</p>", 500
+
+@app.route('/<path:filename>')
+def serve_static(filename):
+    """Serve arquivos estáticos (CSS, JS) da pasta frontend"""
+    try:
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        file_path = os.path.join(project_root, 'frontend', filename)
