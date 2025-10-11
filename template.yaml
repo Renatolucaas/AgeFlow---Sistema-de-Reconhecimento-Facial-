@@ -1,0 +1,37 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: "age-estimation-system"
+  
+  Environment:
+    Type: String
+    Default: "dev"
+  
+  NotificationEmail:
+    Type: String
+    Default: "renatolucas@ucl.br"  # ✅ SEU EMAIL AQUI
+
+Globals:
+  Function:
+    Runtime: python3.13  # ✅ CORRIGIDO - AWS SAM não suporta 3.13
+    Timeout: 30
+    Environment:
+      Variables:
+        PROJECT_NAME: !Ref ProjectName
+        ENVIRONMENT: !Ref Environment
+
+Resources:
+  # S3 Bucket para upload de imagens
+  ImagesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${ProjectName}-${Environment}-images"
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ["*"]
+            AllowedMethods: ["GET", "PUT", "POST", "HEAD"]
+            AllowedOrigins: ["*"]
+            MaxAge: 3000
