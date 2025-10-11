@@ -90,7 +90,7 @@ def serve_static(filename):
         project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         file_path = os.path.join(project_root, 'frontend', filename)
 
-         if os.path.exists(file_path):
+        if os.path.exists(file_path):
             # Determina o content type baseado na extensão
             if filename.endswith('.css'):
                 mimetype = 'text/css'
