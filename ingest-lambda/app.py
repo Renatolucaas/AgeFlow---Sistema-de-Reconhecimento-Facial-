@@ -13,3 +13,6 @@ def lambda_handler(event, context):
         body = json.loads(event['body'])
         image_data = body['image']
         user_email = body.get('email', 'anonymous@example.com')
+
+         # Decodificar imagem base64
+        image_bytes = base64.b64decode(image_data.split(',')[1])
