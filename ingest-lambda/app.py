@@ -36,3 +36,11 @@ def lambda_handler(event, context):
                 'timestamp': str(timestamp)
             }
         )
+
+        # Mensagem para a fila
+        queue_message = {
+            'requestId': request_id,
+            's3Key': file_name,
+            'userEmail': user_email,
+            'timestamp': timestamp
+        }
