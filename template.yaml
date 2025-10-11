@@ -144,3 +144,24 @@ Resources:
           Properties:
             Queue: !GetAtt ImageUploadQueue.Arn
             BatchSize: 1
+
+ # Lambda de Feedback
+  FeedbackLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-${Environment}-feedback"
+      CodeUri: feedback-lambda/
+      Handler: app.lambda_handler
+      Runtime: python3.13
+      Environment:
+        Variables:
+          NOTIFICATIONS_TOPIC_ARN: !Ref NotificationsTopic
+      Policies:
+        - SNSPublishMessagePolicy:
+            TopicName: !Ref NotificationsTopic
+      Events:
+        SQSFeedbackEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt ResultsQueue.Arn
+            BatchSize: 1
