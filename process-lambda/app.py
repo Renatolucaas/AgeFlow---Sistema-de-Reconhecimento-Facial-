@@ -34,3 +34,20 @@ def lambda_handler(event, context):
             
             # Salvar no DynamoDB
             save_to_dynamodb(results, user_email)
+
+            # Enviar para fila de resultados
+            send_to_results_queue(results, user_email)
+            
+            print(f"Processamento concluído para {request_id}")
+            
+        except Exception as e:
+            print(f"Erro no processamento: {str(e)}")
+            continue
+
+def process_faces(rekognition_response, request_id):
+    faces_data = []
+    
+    for i, face_detail in enumerate(rekognition_response['FaceDetails']):
+        age_range = face_detail['AgeRange']
+        emotions = face_detail['Emotions']
+        gender = face_detail['Gender']
