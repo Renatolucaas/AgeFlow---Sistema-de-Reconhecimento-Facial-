@@ -23,3 +23,16 @@ def lambda_handler(event, context):
 
         # Nome do arquivo no S3
         file_name = f"uploads/{request_id}.jpg"
+
+        # Upload para S3
+        s3.put_object(
+            Bucket='age-estimation-system-dev-images',
+            Key=file_name,
+            Body=image_bytes,
+            ContentType='image/jpeg',
+            Metadata={
+                'requestId': request_id,
+                'userEmail': user_email,
+                'timestamp': str(timestamp)
+            }
+        )
