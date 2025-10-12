@@ -31,3 +31,77 @@ header h1 {
     font-size: 2.5em;
     margin-bottom: 10px;
 }
+header p {
+    font-size: 1.2em;
+    opacity: 0.9;
+}
+
+.upload-section {
+    padding: 40px;
+}
+
+.upload-area {
+    border: 3px dashed #3498db;
+    border-radius: 15px;
+    padding: 60px 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.upload-area:hover {
+    border-color: #2980b9;
+    background: #f8f9fa;
+}
+
+.upload-area.dragover {
+    border-color: #27ae60;
+    background: #d5f4e6;
+}
+
+.upload-icon {
+    font-size: 4em;
+    margin-bottom: 20px;
+}
+
+.btn-primary {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 10px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+}
+
+.preview-section {
+    margin-top: 30px;
+}
+
+.image-preview {
+    position: relative;
+    max-width: 500px;
+    margin: 0 auto 20px;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+.image-preview img {
+    width: 100%;
+    display: block;
+}
+
+.image-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
