@@ -160,6 +160,36 @@ class AgeEstimationApp {
         
         this.displayResults(mockResults);
     }
+    displayResults(results) {
+        let html = `<h4>🎯 Análise Concluída - ${results.facesDetected} face(s) detectada(s)</h4>`;
+        
+        results.faces.forEach((face, index) => {
+            html += `
+                <div class="face-result">
+                    <h4>👤 Face ${index + 1}</h4>
+                    <div class="result-grid">
+                        <div class="result-item">
+                            <div class="result-value">${face.ageRange.estimated} anos</div>
+                            <div class="result-label">Idade Estimada</div>
+                            <div class="result-sub">Faixa: ${face.ageRange.low}-${face.ageRange.high}</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-value">${face.gender.value}</div>
+                            <div class="result-label">Gênero</div>
+                            <div class="result-sub">${face.gender.confidence.toFixed(1)}% confiança</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-value">${this.translateEmotion(face.emotion.type)}</div>
+                            <div class="result-label">Emoção</div>
+                            <div class="result-sub">${face.emotion.confidence.toFixed(1)}% confiança</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        document.getElementById('resultsContent').innerHTML = html;
+    }
 
 
 
