@@ -9,4 +9,14 @@ class AgeEstimationApp {
         this.setupEventListeners();
         this.loadHistory();
     }
+     setupEventListeners() {
+        const uploadArea = document.getElementById('uploadArea');
+        const imageInput = document.getElementById('imageInput');
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+    }
 }
