@@ -80,6 +80,46 @@ class AgeEstimationApp {
         document.getElementById('imageInput').value = '';
         this.currentImage = null;
     }
+     async processImage() {
+        const email = document.getElementById('userEmail').value || 'anonymous@example.com';
+        
+        if (!this.currentImage) {
+            alert('Por favor, selecione uma imagem primeiro.');
+            return;
+        }
+
+        this.showLoading();
+
+        try {
+            const response = await fetch(this.apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    image: this.currentImage.dataUrl,
+                    email: email
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.showSuccess(data.requestId);
+                this.addToHistory(data.requestId, email);
+                
+                // Simular recebimento de resultados (em produção seria via WebSocket ou polling)
+                setTimeout(() => {
+                    this.simulateResults(data.requestId);
+                }, 3000);
+            } else {
+                this.showError(data.error);
+            }
+        } catch (error) {
+            this.showError('Erro de conexão: ' + error.message);
+        }
+    }
+
 
 
     }
