@@ -1,0 +1,218 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: "age-estimation-system"
+  
+  Environment:
+    Type: String
+    Default: "dev"
+  
+  NotificationEmail:
+    Type: String
+    Default: "renatolucas@ucl.br"  # ✅ SEU EMAIL AQUI
+
+Globals:
+  Function:
+    Runtime: python3.13  # ✅ CORRIGIDO - AWS SAM não suporta 3.13
+    Timeout: 30
+    Environment:
+      Variables:
+        PROJECT_NAME: !Ref ProjectName
+        ENVIRONMENT: !Ref Environment
+
+Resources:
+  # S3 Bucket para upload de imagens
+  ImagesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${ProjectName}-${Environment}-images"
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ["*"]
+            AllowedMethods: ["GET", "PUT", "POST", "HEAD"]
+            AllowedOrigins: ["*"]
+            MaxAge: 3000
+
+  # Filas SQS
+  ImageUploadQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${ProjectName}-${Environment}-upload-queue"
+      VisibilityTimeout: 300
+      MessageRetentionPeriod: 1200
+
+  ResultsQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${ProjectName}-${Environment}-results-queue"
+      VisibilityTimeout: 300
+      MessageRetentionPeriod: 3600
+
+# Tabela DynamoDB
+  ResultsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${ProjectName}-${Environment}-results"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: "requestId"
+          AttributeType: "S"
+        - AttributeName: "createdAt"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "requestId"
+          KeyType: "HASH"
+      GlobalSecondaryIndexes:
+        - IndexName: "createdAt-index"
+          KeySchema:
+            - AttributeName: "createdAt"
+              KeyType: "HASH"
+          Projection:
+            ProjectionType: "ALL"
+
+# Tópico SNS para notificações (APENAS 1 VEZ)
+  NotificationsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "${ProjectName}-${Environment}-notifications"
+      Subscription:
+        - Protocol: email
+          Endpoint: !Ref NotificationEmail  # ✅ SEU EMAIL AQUI
+
+# API Gateway
+  ApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Environment
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+
+        # Lambda de Ingestão
+  IngestLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-${Environment}-ingest"
+      CodeUri: ingest-lambda/
+      Handler: app.lambda_handler
+      Runtime: python3.13
+      Environment:
+        Variables:
+          IMAGES_BUCKET: !Ref ImagesBucket
+          UPLOAD_QUEUE_URL: !Ref ImageUploadQueue
+      Policies:
+        - S3WritePolicy:
+            BucketName: !Ref ImagesBucket
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt ImageUploadQueue.QueueName
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /upload
+            Method: post
+            RestApiId: !Ref ApiGateway
+
+# Lambda de Processamento
+  ProcessLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-${Environment}-process"
+      CodeUri: process-lambda/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Environment:
+        Variables:
+          IMAGES_BUCKET: !Ref ImagesBucket
+          RESULTS_TABLE: !Ref ResultsTable
+          RESULTS_QUEUE_URL: !Ref ResultsQueue
+      Policies:
+        - AmazonRekognitionFullAccess
+        - S3ReadPolicy:
+            BucketName: !Ref ImagesBucket
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ResultsTable
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt ResultsQueue.QueueName
+      Events:
+        SQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt ImageUploadQueue.Arn
+            BatchSize: 1
+
+ # Lambda de Feedback
+  FeedbackLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-${Environment}-feedback"
+      CodeUri: feedback-lambda/
+      Handler: app.lambda_handler
+      Runtime: python3.13
+      Environment:
+        Variables:
+          NOTIFICATIONS_TOPIC_ARN: !Ref NotificationsTopic
+      Policies:
+        - SNSPublishMessagePolicy:
+            TopicName: !Ref NotificationsTopic
+      Events:
+        SQSFeedbackEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt ResultsQueue.Arn
+            BatchSize: 1
+
+            # Lambda para consulta de resultados
+  ResultsLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-${Environment}-results"
+      CodeUri: results-lambda/
+      Handler: app.lambda_handler
+      Runtime: python3.13
+      Environment:
+        Variables:
+          RESULTS_TABLE: !Ref ResultsTable
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ResultsTable
+      Events:
+        ApiResultEvent:
+          Type: Api
+          Properties:
+            Path: /results/{requestId}
+            Method: get
+            RestApiId: !Ref ApiGateway
+
+Outputs:
+  ApiUrl:
+    Description: "API Gateway URL"
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Environment}"
+  
+  UploadEndpoint:
+    Description: "Endpoint para upload de imagens"
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/upload"
+  
+  ResultsEndpoint:
+    Description: "Endpoint para consulta de resultados"
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/results/{requestId}"
+  
+  ImagesBucketName:
+    Description: "S3 Bucket para imagens"
+    Value: !Ref ImagesBucket
+  
+  UploadQueueUrl:
+    Description: "URL da fila de upload"
+    Value: !Ref ImageUploadQueue
+  
+  ResultsTableName:
+    Description: "Nome da tabela de resultados"
+    Value: !Ref ResultsTable
+  
+  NotificationsTopicArn:
+    Description: "ARN do tópico de notificações"
+    Value: !Ref NotificationsTopic
