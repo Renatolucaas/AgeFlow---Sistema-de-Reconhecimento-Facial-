@@ -119,6 +119,47 @@ class AgeEstimationApp {
             this.showError('Erro de conexão: ' + error.message);
         }
     }
+    showLoading() {
+        document.getElementById('resultsSection').style.display = 'block';
+        document.getElementById('resultsContent').innerHTML = '';
+        document.getElementById('loading').style.display = 'block';
+    }
+
+    showSuccess(requestId) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('resultsContent').innerHTML = `
+            <div class="success-message">
+                <h4>✅ Imagem enviada com sucesso!</h4>
+                <p>ID do processamento: ${requestId}</p>
+                <p>Os resultados serão enviados para seu email em instantes.</p>
+            </div>
+        `;
+    }
+
+    showError(error) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('resultsContent').innerHTML = `
+            <div class="error-message">
+                <h4>❌ Erro no processamento</h4>
+                <p>${error}</p>
+            </div>
+        `;
+    }
+
+    simulateResults(requestId) {
+        // Simulação de resultados - em produção viria do backend real
+        const mockResults = {
+            requestId: requestId,
+            facesDetected: 1,
+            faces: [{
+                ageRange: { low: 25, high: 32, estimated: 28 },
+                gender: { value: 'Male', confidence: 95.5 },
+                emotion: { type: 'HAPPY', confidence: 87.3 }
+            }]
+        };
+        
+        this.displayResults(mockResults);
+    }
 
 
 
