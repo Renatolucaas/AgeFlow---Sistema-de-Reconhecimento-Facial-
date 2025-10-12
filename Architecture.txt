@@ -1,0 +1,112 @@
+* Visão geral*
+O sistema é composto por camadas de front-end, ingestão, processamento assíncrono, persistência e feedback/notificações. A ideia central é:
+
+O usuário envia uma imagem via interface (frontend).
+
+A imagem é encaminhada para uma fila ou endpoint para ser processada.
+
+Um componente “processador” consome a fila, chama o serviço de reconhecimento facial, salva resultados, envia feedback etc.
+
+Erros são tratados via filas de falhas (DLQ) e notificações.
+
+O frontend ou outro componente visualiza os resultados processados ou relatórios históricos.
+* Fluxo de dados do usuario até o resultado *
+Usuário / Frontend
+
+O usuário envia uma foto (por exemplo, via upload) pelo aplicativo frontend.
+
+Essa foto é enviada para o backend — possivelmente via API Gateway ou endpoint que aceita uploads.
+
+API Gateway / Lambda Ingest
+
+A foto chega a uma função Lambda “Ingest” (ou algo equivalente), responsável por receber a requisição de upload/início de análise.
+
+Essa função Lambda:
+
+Armazena o arquivo no S3 (bucket de uploads).
+
+Ou publica uma mensagem numa fila SQS denominada fotos_para_processar, informando qual arquivo (ou qual requisição) deve ser processado.
+
+S3 (bucket-uploads)
+
+Armazena as imagens enviadas pelos usuários para que possam ser processadas posteriormente.
+
+A função de ingestão pode colocar o arquivo no bucket e registrar na fila para processamento.
+
+Fila SQS “fotos_para_processar”
+
+Fila que armazena “tarefas” de processamento: cada mensagem representa uma foto / requisição a ser processada.
+
+Isso permite escalonamento, desacoplamento e tolerância a falhas.
+
+Lambda Process
+
+Uma função Lambda “Process” consome da fila fotos_para_processar.
+
+Para cada imagem / mensagem, essa função faz:
+
+Baixa a imagem do S3 (bucket de uploads).
+
+Chama o serviço de Rekognition (ou outro serviço de reconhecimento facial) para detectar rostos e obter estimativas (idade, gênero etc.).
+
+Interpreta os resultados e possivelmente transforma / formata os dados.
+
+Persistência & filas de resultados
+
+Alguns caminhos de saída possíveis:
+
+Se o processamento for bem-sucedido, a função “Process” envia os resultados para uma fila resultados_processados.
+
+Também pode gravar nos dados finais (por exemplo, em um banco de dados DynamoDB) as análises bem-sucedidas.
+
+Se acontecer algum erro (ex: falha no Rekognition, dados inválidos etc.), a função “Process” envia mensagem para uma fila de falhas / DLQ (Dead Letter Queue), chamada falhas_processamento.
+
+Lambda Feedback / Consumidor de resultados
+
+Uma função Lambda de Feedback consome as mensagens da fila resultados_processados.
+
+Essa função pode:
+
+Gravar os resultados no banco de dados (DynamoDB).
+
+Enviar ao frontend ou outros sistemas como resposta (via API ou webhook).
+
+Disparar notificações ou atualizações para o usuário.
+
+DLQ / tratamento de falhas
+
+Mensagens em falhas_processamento são consumidas por um DLQ handler (ou uma função Lambda de tratamento de falhas).
+
+Essa função de “failure handler” pode:
+
+Gravar logs no CloudWatch ou usar X-Ray para rastreamento.
+
+Enviar alertas via SNS (serviço de notificação) para que alguém seja avisado de erros graves.
+
+Tentar reprocessar, dependendo da lógica de reentrada.
+
+Banco de dados (DynamoDB)
+
+Armazena os resultados processados persistentes, metadados, histórico das requisições, etc.
+
+Usado pelo frontend para exibir histórico, resultados anteriores etc.
+
+CloudWatch / X-Ray
+
+Para observabilidade: logs de execução, métricas, rastreamento de latência/falha.
+
+Ajuda a monitorar saúde do sistema, identificar gargalos e erros.
+*Responsabilidades resumidas*
+Componente	Responsabilidade
+Frontend	Interface do usuário, upload de imagem, exibição de resultados/histórico
+API Gateway / Lambda Ingest	Receber requisições, validar, inserir na fila e salvar imagem no S3
+S3 (bucket-uploads)	Armazenar imagens enviadas
+SQS fotos_para_processar	Fila de entrada para processamento assíncrono
+Lambda Process	Consumir fila, chamar serviço de reconhecimento, decidir sucesso/falha
+SQS resultados_processados	Fila para resultados prontos
+Lambda Feedback	Consumir resultados, gravar no BD, enviar resposta ao cliente
+SQS falhas_processamento / DLQ	Armazenar mensagens que falharam no processamento
+Lambda DLQ Handler	Tratar falhas, gerar alertas, logs, tentar recuperação
+DynamoDB	Persistir dados dos processos, histórico e resultados
+SNS	Enviar notificações de falhas criticadas
+CloudWatch / X-Ray	Observabilidade, rastreamento e logs
