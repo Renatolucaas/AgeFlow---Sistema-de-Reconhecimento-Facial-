@@ -46,6 +46,41 @@ class AgeEstimationApp {
             }
         });
     }
+    handleImageSelect(file) {
+        if (!file.type.match('image.*')) {
+            alert('Por favor, selecione um arquivo de imagem válido.');
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            alert('A imagem deve ter menos de 5MB.');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            this.currentImage = {
+                file: file,
+                dataUrl: e.target.result
+            };
+            this.showPreview();
+        };
+        reader.readAsDataURL(file);
+    }
+
+    showPreview() {
+        document.getElementById('uploadArea').style.display = 'none';
+        document.getElementById('previewSection').style.display = 'block';
+        document.getElementById('imagePreview').src = this.currentImage.dataUrl;
+    }
+
+    cancelUpload() {
+        document.getElementById('previewSection').style.display = 'none';
+        document.getElementById('uploadArea').style.display = 'block';
+        document.getElementById('imageInput').value = '';
+        this.currentImage = null;
+    }
+
 
     }
     
