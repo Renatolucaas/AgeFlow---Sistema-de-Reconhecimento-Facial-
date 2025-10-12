@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estimativa de Idade - AWS Rekognition</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Estilos embutidos do arquivo original foram movidos para style.css para organização */
+        /* Mantendo apenas os overrides, mas como a versão atual possui um style.css completo, */
+        /* o <style> deve apontar para o arquivo .css externo, conforme alteração abaixo. */
+        
+        /* A versão final que usa o script.js deve ter a tag <link> para style.css */
+        
+        /* A versão final que usa o script.js deve ter o campo de email no HTML. */
+        </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎭 Estimativa de Idade</h1>
+            <p>Faça upload de uma imagem para análise facial com AWS Rekognition</p>
+        </header>
+
+        <section class="upload-section">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">⬆️</div>
+                <h3>Arraste e solte sua imagem aqui</h3>
+                <p>ou clique para selecionar (Máx. 5MB)</p>
+                <input type="file" id="imageInput" accept="image/*" hidden>
+                <button class="btn-primary" onclick="document.getElementById('imageInput').click()">
+                    Selecionar Imagem
+                </button>
+            </div>
+        </section>
+        <section class="preview-section" id="previewSection" style="display: none;">
+            <div class="image-preview">
+                <img id="imagePreview" src="#" alt="Preview">
+                <div class="image-overlay" id="imageOverlay">
+                    </div>
+            </div>
+            
+            <div class="actions">
+                <p style="margin-bottom: 15px;">**Opcional:** Receba o resultado por email:</p>
+                <input type="email" id="userEmail" placeholder="seu.email@exemplo.com">
+                <button class="btn-process" onclick="app.processImage()" id="analyzeBtn">
+                    🔍 Analisar Imagem
+                </button>
+                <button class="btn-cancel" onclick="app.cancelUpload()">
+                    Cancelar
+                </button>
+            </div>
+        </section>
+        
+        <section class="results-section" id="resultsSection" style="display: none;">
+            <div id="loading" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <h4>⏳ Processando imagem...</h4>
+                <p>O resultado será exibido em instantes. Você também receberá uma notificação.</p>
+            </div>
+            <div id="resultsContent">
+                </div>
+        </section>
+         <section class="history-section">
+            <h3>🕒 Histórico Recente</h3>
+            <div id="historyList">
+                </div>
+        </section>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
