@@ -190,6 +190,19 @@ class AgeEstimationApp {
         
         document.getElementById('resultsContent').innerHTML = html;
     }
+    translateEmotion(emotion) {
+        const emotions = {
+            'HAPPY': '😊 Feliz',
+            'SAD': '😢 Triste',
+            'ANGRY': '😠 Bravo',
+            'CONFUSED': '😕 Confuso',
+            'DISGUSTED': '🤢 Enojado',
+            'SURPRISED': '😮 Surpreso',
+            'CALM': '😌 Calmo',
+            'FEAR': '😨 Com medo'
+        };
+        return emotions[emotion] || emotion;
+    }
 
 
 
