@@ -203,8 +203,55 @@ class AgeEstimationApp {
         };
         return emotions[emotion] || emotion;
     }
-
-
-
+    addToHistory(requestId, email) {
+        const history = this.getHistory();
+        history.unshift({
+            requestId: requestId,
+            email: email,
+            timestamp: new Date().toISOString(),
+            faces: 1 // Em produção viria do backend
+        });
+        
+        // Manter apenas últimos 10 itens
+        if (history.length > 10) {
+            history.pop();
+        }
+        
+        localStorage.setItem('ageEstimationHistory', JSON.stringify(history));
+        this.loadHistory();
     }
+
+    getHistory() {
+        return JSON.parse(localStorage.getItem('ageEstimationHistory') || '[]');
+    }
+
+    loadHistory() {
+        const history = this.getHistory();
+        const historyList = document.getElementById('historyList');
+        
+        if (history.length === 0) {
+            historyList.innerHTML = '<p>Nenhuma análise realizada ainda.</p>';
+            return;
+        }
+        
+        historyList.innerHTML = history.map(item => `
+            <div class="history-item">
+                <strong>ID:</strong> ${item.requestId.substring(0, 8)}...<br>
+                <strong>Email:</strong> ${item.email}<br>
+                <strong>Data:</strong> ${new Date(item.timestamp).toLocaleString()}<br>
+                <strong>Faces:</strong> ${item.faces}
+            </div>
+        `).join('');
+    }
+}
+
+// Inicializar aplicação
+document.addEventListener('DOMContentLoaded', () => {
+    // Definir a instância do aplicativo globalmente para que os manipuladores de clique no HTML possam acessá-lo.
+    window.app = new AgeEstimationApp();
+});
+
+
+
+    
     
