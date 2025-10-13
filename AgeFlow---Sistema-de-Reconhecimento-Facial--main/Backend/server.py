@@ -2,6 +2,9 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
 import sys
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 # Adiciona o diretório pai ao path para importar o simple_processor
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -23,6 +26,63 @@ try:
 except Exception as e:
     print(f"❌ Erro ao inicializar processador: {e}")
     sys.exit(1)
+
+def send_email_results(email, results):
+    """Envia os resultados da análise por email"""
+    try:
+        # CONFIGURAÇÃO GMAIL COM SUA SENHA DE APP
+        smtp_server = "smtp.gmail.com"
+        port = 587
+        sender_email = "sistemaweb2025.2ucl@gmail.com"
+        password = "sbhn pdto sjjv wlio"  # ⬅️ SUA SENHA DE APP IMPLEMENTADA
+
+        # Criar mensagem
+        message = MIMEMultipart("alternative")
+        message["Subject"] = "📊 Resultados da Análise Facial"
+        message["From"] = sender_email
+        message["To"] = email
+
+        # Conteúdo do email
+        html = f"""
+        <html>
+          <body style="font-family: Arial, sans-serif; padding: 20px; background: #f8f9fa;">
+            <div style="max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <h2 style="color: #3498db; text-align: center;">📊 Resultados da Análise Facial</h2>
+                <p><strong>Faces detectadas:</strong> {results['facesDetected']}</p>
+                <p><strong>ID da análise:</strong> {results['requestId']}</p>
+                
+                <h3 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">Detalhes das faces:</h3>
+                {"".join([f"""
+                <div style="border: 1px solid #ddd; padding: 15px; margin: 15px 0; border-radius: 8px; background: #f8f9fa;">
+                  <h4 style="color: #e74c3c; margin-top: 0;">👤 Face {i+1}</h4>
+                  <p><strong>Idade:</strong> {face['ageRange']['estimated']} anos (faixa: {face['ageRange']['low']}-{face['ageRange']['high']})</p>
+                  <p><strong>Gênero:</strong> {face['gender']['value']} ({face['gender']['confidence']:.1f}% confiança)</p>
+                  <p><strong>Emoção:</strong> {face['emotion']['type']} ({face['emotion']['confidence']:.1f}% confiança)</p>
+                </div>
+                """ for i, face in enumerate(results['faces'])])}
+                
+                <div style="margin-top: 20px; padding: 15px; background: #e8f4fd; border-radius: 5px; text-align: center;">
+                    <p style="margin: 0; color: #2c3e50;">Obrigado por usar nosso serviço de análise facial! 🎉</p>
+                </div>
+            </div>
+          </body>
+        </html>
+        """
+
+        message.attach(MIMEText(html, "html"))
+
+        # Enviar email
+        with smtplib.SMTP(smtp_server, port) as server:
+            server.starttls()
+            server.login(sender_email, password)
+            server.sendmail(sender_email, email, message.as_string())
+        
+        print(f"✅ Email enviado com sucesso para: {email}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Erro ao enviar email para {email}: {e}")
+        return False
 
 @app.route('/')
 def serve_frontend():
@@ -125,6 +185,15 @@ def analyze_image():
         
         if result['success']:
             print(f"✅ Análise concluída: {result['results']['facesDetected']} face(s) detectada(s)")
+            
+            # ENVIAR EMAIL SE FORNECIDO
+            user_email = data.get('email', '')
+            if user_email and user_email != 'anonymous@example.com':
+                print(f"📧 Enviando resultados para: {user_email}")
+                send_email_results(user_email, result['results'])
+            else:
+                print("ℹ️  Email não fornecido - pulando envio")
+                
         else:
             print(f"❌ Erro na análise: {result['error']}")
         
@@ -161,6 +230,7 @@ if __name__ == '__main__':
         print("🌐 Servidor rodando em: http://localhost:5000")
         print("📷 Interface: http://localhost:5000")
         print("🔍 Endpoint de saúde: http://localhost:5000/api/health")
+        print("📨 Suporte a email: ✅ ATIVADO")
         print("=" * 60)
         app.run(debug=True, host='0.0.0.0', port=5000)
     else:

@@ -1,6 +1,6 @@
 class AgeEstimationApp {
     constructor() {
-        this.apiUrl = 'https://your-api-id.execute-api.region.amazonaws.com/dev/upload';
+        this.apiUrl = 'http://localhost:5000/api/analyze';
         this.currentImage = null;
         this.init();
     }
@@ -9,7 +9,8 @@ class AgeEstimationApp {
         this.setupEventListeners();
         this.loadHistory();
     }
-     setupEventListeners() {
+
+    setupEventListeners() {
         const uploadArea = document.getElementById('uploadArea');
         const imageInput = document.getElementById('imageInput');
 
@@ -17,7 +18,7 @@ class AgeEstimationApp {
         uploadArea.addEventListener('dragover', (e) => {
             e.preventDefault();
             uploadArea.classList.add('dragover');
-         });
+        });
 
         uploadArea.addEventListener('dragleave', () => {
             uploadArea.classList.remove('dragover');
@@ -46,6 +47,7 @@ class AgeEstimationApp {
             }
         });
     }
+
     handleImageSelect(file) {
         if (!file.type.match('image.*')) {
             alert('Por favor, selecione um arquivo de imagem válido.');
@@ -80,7 +82,8 @@ class AgeEstimationApp {
         document.getElementById('imageInput').value = '';
         this.currentImage = null;
     }
-     async processImage() {
+
+    async processImage() {
         const email = document.getElementById('userEmail').value || 'anonymous@example.com';
         
         if (!this.currentImage) {
@@ -102,23 +105,35 @@ class AgeEstimationApp {
                 })
             });
 
+            // Verifica se a resposta HTTP é OK
+            if (!response.ok) {
+                throw new Error(`Erro do servidor: ${response.status}`);
+            }
+
             const data = await response.json();
 
             if (data.success) {
-                this.showSuccess(data.requestId);
-                this.addToHistory(data.requestId, email);
+                // CORREÇÃO: Verifica se requestId existe
+                const requestId = data.results?.requestId || `req_${Date.now()}`;
+                this.showSuccess(requestId);
+                this.addToHistory(requestId, email);
                 
-                // Simular recebimento de resultados (em produção seria via WebSocket ou polling)
-                setTimeout(() => {
-                    this.simulateResults(data.requestId);
-                }, 3000);
+                // Mostrar resultados reais da AWS Rekognition
+                if (data.results) {
+                    this.displayResults(data.results);
+                }
             } else {
-                this.showError(data.error);
+                // CORREÇÃO: Mensagem de erro mais segura
+                const errorMsg = data.error || 'Erro desconhecido no servidor';
+                this.showError(errorMsg);
             }
         } catch (error) {
-            this.showError('Erro de conexão: ' + error.message);
+            // CORREÇÃO: Mensagem de erro mais clara
+            console.error('Erro completo:', error);
+            this.showError('Erro de conexão com o servidor. Verifique se o backend está rodando.');
         }
     }
+
     showLoading() {
         document.getElementById('resultsSection').style.display = 'block';
         document.getElementById('resultsContent').innerHTML = '';
@@ -146,50 +161,46 @@ class AgeEstimationApp {
         `;
     }
 
-    simulateResults(requestId) {
-        // Simulação de resultados - em produção viria do backend real
-        const mockResults = {
-            requestId: requestId,
-            facesDetected: 1,
-            faces: [{
-                ageRange: { low: 25, high: 32, estimated: 28 },
-                gender: { value: 'Male', confidence: 95.5 },
-                emotion: { type: 'HAPPY', confidence: 87.3 }
-            }]
-        };
-        
-        this.displayResults(mockResults);
-    }
     displayResults(results) {
         let html = `<h4>🎯 Análise Concluída - ${results.facesDetected} face(s) detectada(s)</h4>`;
         
-        results.faces.forEach((face, index) => {
+        if (results.facesDetected === 0) {
             html += `
                 <div class="face-result">
-                    <h4>👤 Face ${index + 1}</h4>
-                    <div class="result-grid">
-                        <div class="result-item">
-                            <div class="result-value">${face.ageRange.estimated} anos</div>
-                            <div class="result-label">Idade Estimada</div>
-                            <div class="result-sub">Faixa: ${face.ageRange.low}-${face.ageRange.high}</div>
-                        </div>
-                        <div class="result-item">
-                            <div class="result-value">${face.gender.value}</div>
-                            <div class="result-label">Gênero</div>
-                            <div class="result-sub">${face.gender.confidence.toFixed(1)}% confiança</div>
-                        </div>
-                        <div class="result-item">
-                            <div class="result-value">${this.translateEmotion(face.emotion.type)}</div>
-                            <div class="result-label">Emoção</div>
-                            <div class="result-sub">${face.emotion.confidence.toFixed(1)}% confiança</div>
-                        </div>
-                    </div>
+                    <h4>❌ Nenhuma face detectada</h4>
+                    <p>Tente com uma imagem mais clara ou com rostos mais visíveis.</p>
                 </div>
             `;
-        });
+        } else {
+            results.faces.forEach((face, index) => {
+                html += `
+                    <div class="face-result">
+                        <h4>👤 Face ${index + 1}</h4>
+                        <div class="result-grid">
+                            <div class="result-item">
+                                <div class="result-value">${face.ageRange.estimated} anos</div>
+                                <div class="result-label">Idade Estimada</div>
+                                <div class="result-sub">Faixa: ${face.ageRange.low}-${face.ageRange.high}</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="result-value">${face.gender.value}</div>
+                                <div class="result-label">Gênero</div>
+                                <div class="result-sub">${face.gender.confidence.toFixed(1)}% confiança</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="result-value">${this.translateEmotion(face.emotion.type)}</div>
+                                <div class="result-label">Emoção</div>
+                                <div class="result-sub">${face.emotion.confidence.toFixed(1)}% confiança</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
         
         document.getElementById('resultsContent').innerHTML = html;
     }
+
     translateEmotion(emotion) {
         const emotions = {
             'HAPPY': '😊 Feliz',
@@ -203,6 +214,7 @@ class AgeEstimationApp {
         };
         return emotions[emotion] || emotion;
     }
+
     addToHistory(requestId, email) {
         const history = this.getHistory();
         history.unshift({
@@ -250,8 +262,3 @@ document.addEventListener('DOMContentLoaded', () => {
     // Definir a instância do aplicativo globalmente para que os manipuladores de clique no HTML possam acessá-lo.
     window.app = new AgeEstimationApp();
 });
-
-
-
-    
-    
